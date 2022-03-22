@@ -7,7 +7,7 @@ on:
 
 jobs:
   update:
-    uses: path/to/.github/workflows/my_workflow.yml@main
+    uses: ./.github/workflows/my_workflow.yml
     with:
       aws_account_id: 634847813792
       aws_region: us-east-1
