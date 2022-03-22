@@ -1,31 +1,19 @@
-name: Deploy serverless app
+name: Update container image lambda DEV
 
-on: 
-  push:
-    branches:
-      - main
+on:
+  schedule:
+    - cron:  '0 8 * * *'
+  workflow_dispatch:
 
 jobs:
-  deploy:
-    name: deploy
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [14.x]
-    steps:
-    - uses: actions/checkout@v2
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v1
-      with:
-        node-version: ${{ matrix.node-version }}
-    
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v1
-      
-    - name: serverless deploy
-      uses: serverless/github-action@master
-      with:
-        args: deploy
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  update:
+    uses: path/to/.github/workflows/my_workflow.yml@main
+    with:
+      aws_account_id: 634847813792
+      aws_region: us-east-1
+      ecr_repository_name: serverless-clambda-av-dev
+      function_name: clambda-av-dev-virusScan
+      image_tag: clambdaAv
+    secrets:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
