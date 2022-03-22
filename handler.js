@@ -58,7 +58,7 @@ module.exports.virusScan = async (event, context) => {
       }
     }
 
-    // delete the temp file
+    // delete the temp file - test
     unlinkSync(`/tmp/${record.s3.object.key}`);
   }
 };
