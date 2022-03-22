@@ -79,7 +79,7 @@ jobs:
           ECR_REGISTRY: ${{ inputs.aws_account_id }}.dkr.ecr.${{ inputs.aws_region }}.amazonaws.com
           ECR_REPOSITORY: ${{ inputs.ecr_repository_name }}
           IMAGE_TAG: ${{ inputs.image_tag }}
-          FUNCTION_NAME: ${{ inputs.scan_av_function_name }}
+          FUNCTION_NAME: ${{ inputs.function_name }}
         run: |
           aws lambda update-function-code --no-cli-pager --function-name $FUNCTION_NAME --image-uri $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           aws lambda wait function-updated --no-cli-pager  --function-name $FUNCTION_NAME
