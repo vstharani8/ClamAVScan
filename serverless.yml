@@ -1,0 +1,34 @@
+service: clambda-av
+
+provider:
+  name: aws
+  runtime: nodejs14.x
+  ecr:
+    images:
+      clambdaAv:
+        path: ./
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - s3:GetObject
+        - s3:PutObjectTagging
+        - s3:DeleteObject
+      Resource: "arn:aws:s3:::tharani-bucket-av/*"
+
+functions:
+  virusScan:
+    image:
+      name: clambdaAv
+    memorySize: 2048
+    events:
+      - s3: 
+          bucket: tharani-bucket-av
+          event: s3:ObjectCreated:*
+          existing: true
+    timeout: 120
+  
+
+package:
+  exclude:
+    - node_modules/**
+    - coverage/**
