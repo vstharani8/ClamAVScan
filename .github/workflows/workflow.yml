@@ -1,0 +1,90 @@
+name: Update container image lambda HELPER
+
+on:
+  workflow_call:
+    inputs:
+      aws_account_id:
+        description: "AWS account ID to deploy to"
+        required: true
+        type: string
+      aws_region:
+        description: "AWS region to deploy to"
+        required: true
+        type: string
+      ecr_repository_name:
+        description: "AWS ECR repository name where container image is stored"
+        required: true
+        type: string
+      function_name:
+        description: "Name of lambda function"
+        required: true
+        type: string
+      image_tag:
+        description: "Tag of an image that sits inside ECR repository"
+        required: true
+        type: string
+    secrets:
+      AWS_ACCESS_KEY_ID:
+        required: true
+      AWS_SECRET_ACCESS_KEY:
+        required: true
+
+jobs:
+  build:
+    name: Build & push new image
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Retrieve AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-region: ${{ inputs.aws_region }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Login to Amazon ECR
+        id: login_ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build, tag, and push image to ECR
+        env:
+          ECR_REGISTRY: ${{ inputs.aws_account_id }}.dkr.ecr.${{ inputs.aws_region }}.amazonaws.com
+          ECR_REPOSITORY: ${{ inputs.ecr_repository_name }}
+          IMAGE_TAG: ${{ inputs.image_tag }}
+          DOCKERFILE_PATH: ./path/to/directory/with/dockerfile
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $DOCKERFILE_PATH
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
+
+  deploy:
+    name: Update lambda code
+    runs-on: ubuntu-latest
+    needs: [build]
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Retrieve AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-region: ${{ inputs.aws_region }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Update function code
+        env:
+          ECR_REGISTRY: ${{ inputs.aws_account_id }}.dkr.ecr.${{ inputs.aws_region }}.amazonaws.com
+          ECR_REPOSITORY: ${{ inputs.ecr_repository_name }}
+          IMAGE_TAG: ${{ inputs.image_tag }}
+          FUNCTION_NAME: ${{ inputs.scan_av_function_name }}
+        run: |
+          aws lambda update-function-code \
+            --no-cli-pager \
+            --function-name $FUNCTION_NAME \
+            --image-uri $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          aws lambda wait function-updated \
+            --no-cli-pager \
+            --function-name $FUNCTION_NAME
